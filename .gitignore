@@ -62,6 +62,7 @@ docs/
 
 public/cdn/
 public/game-res/*.7z
+!public/game-res/full-pack.7z
 public/game-res/*.part
 .artifacts/
 scripts/

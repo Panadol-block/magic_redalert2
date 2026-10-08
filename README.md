@@ -78,7 +78,16 @@ bun run typecheck:entry
 
 ## 内置游戏资源包（本地运行）
 
-将完整的 `full-pack.7z` 放到 `public/game-res/full-pack.7z`。启动时优先使用已有浏览器缓存；没有缓存时，自动从本站导入内置包，无需访问远程下载站。内置包缺失或导入失败时，保留原有手动导入入口。
+仓库通过 Git LFS 内置 `public/game-res/full-pack.7z`。启动时优先使用已有浏览器缓存；没有缓存时，自动从本站导入内置包，无需访问远程下载站。内置包缺失或导入失败时，保留原有手动导入入口。
+
+克隆前安装 Git LFS；已有克隆执行以下命令以取回完整素材：
+
+```bash
+git lfs install --local
+git lfs pull
+```
+
+构建前确认素材包为约 110 MiB 的真实文件，而不是约 130 字节的 LFS 指针。CI 克隆时也需启用 LFS（例如 `actions/checkout` 设置 `lfs: true`）。GitHub 的 Download ZIP 不保证包含 LFS 实体，请优先使用安装了 Git LFS 的 Git 克隆。
 
 首次准备资源包可使用以下命令（断点续传，成功后才发布文件）：
 
@@ -90,7 +99,7 @@ curl -fL --retry 3 -C - -o public/game-res/full-pack.7z.part https://download.ra
 
 `public/config.ini` 中的 `bundledGameResArchiveUrl` 控制本地包路径，留空可关闭自动导入。该路径只允许同源 HTTP/HTTPS 地址，不跟随重定向。资源探测拒绝 HTML，避免将 SPA 回退页面误当作压缩包。
 
-资源包约 110 MiB，作为静态文件随 Vite 构建复制到 `dist/game-res/`，不进入 JavaScript bundle。资源包和下载临时文件已加入 Git 忽略规则；克隆仓库不会自动获得素材，部署时需另行携带资源包。首次导入仍需浏览器存储与解压，后续使用缓存；清理站点数据或更换端口会重新导入。首次准备包仍需联网，之后本地启动不需要访问该素材下载站；这不保证其他在线服务可离线使用。
+资源包约 110 MiB，作为静态文件随 Vite 构建复制到 `dist/game-res/`，不进入 JavaScript bundle。完整包由 Git LFS 跟踪，其他压缩包和下载临时文件仍被 Git 忽略；部署时应携带构建后的 `dist/game-res/full-pack.7z`。首次导入仍需浏览器存储与解压，后续使用缓存；清理站点数据或更换端口会重新导入。首次克隆或更新 LFS 素材仍需联网，之后本地启动不需要访问该素材下载站；这不保证其他在线服务可离线使用。LFS 存储和下载流量受 GitHub 账户配额约束。
 
 2026-10-08 验证的资源包 SHA-256 为 `541828fa48f31059eb5edb127b07253515c8f92adeaa1f0fd0b84d6ffa6656f3`。该包中的 `ra2.mix` 为 281888480 字节、CRC32 `D48F0E34`，`multi.mix` 为 18666588 字节、CRC32 `984EFDB6`；资源加载器保留原版本 CRC 检查，并仅增加该 RA2 精确大小与 CRC 组合的兼容项，不关闭完整性校验。
 
