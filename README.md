@@ -76,6 +76,24 @@ bun run preview
 bun run typecheck:entry
 ```
 
+## 内置游戏资源包（本地运行）
+
+将完整的 `full-pack.7z` 放到 `public/game-res/full-pack.7z`。启动时优先使用已有浏览器缓存；没有缓存时，自动从本站导入内置包，无需访问远程下载站。内置包缺失或导入失败时，保留原有手动导入入口。
+
+首次准备资源包可使用以下命令（断点续传，成功后才发布文件）：
+
+```bash
+mkdir -p public/game-res
+curl -fL --retry 3 -C - -o public/game-res/full-pack.7z.part https://download.ra2web.com/full-pack.7z \
+  && mv public/game-res/full-pack.7z.part public/game-res/full-pack.7z
+```
+
+`public/config.ini` 中的 `bundledGameResArchiveUrl` 控制本地包路径，留空可关闭自动导入。该路径只允许同源 HTTP/HTTPS 地址，不跟随重定向。资源探测拒绝 HTML，避免将 SPA 回退页面误当作压缩包。
+
+资源包约 110 MiB，作为静态文件随 Vite 构建复制到 `dist/game-res/`，不进入 JavaScript bundle。资源包和下载临时文件已加入 Git 忽略规则；克隆仓库不会自动获得素材，部署时需另行携带资源包。首次导入仍需浏览器存储与解压，后续使用缓存；清理站点数据或更换端口会重新导入。首次准备包仍需联网，之后本地启动不需要访问该素材下载站；这不保证其他在线服务可离线使用。
+
+2026-10-08 验证的资源包 SHA-256 为 `541828fa48f31059eb5edb127b07253515c8f92adeaa1f0fd0b84d6ffa6656f3`。该包中的 `ra2.mix` 为 281888480 字节、CRC32 `D48F0E34`，`multi.mix` 为 18666588 字节、CRC32 `984EFDB6`；资源加载器保留原版本 CRC 检查，并仅增加该 RA2 精确大小与 CRC 组合的兼容项，不关闭完整性校验。
+
 ## 自动化回归
 
 仓库当前已经不再只依赖手点验证。`scripts/` 下维护了一组可直接执行的回归脚本，主要覆盖大厅、进图、机制和 tester 入口。

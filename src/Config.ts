@@ -75,6 +75,10 @@ export class Config {
         const url = this.generalData.getString("gameResArchiveUrl");
         return url === "" ? undefined : url;
     }
+    get bundledGameResArchiveUrl(): string | undefined {
+        const url = this.generalData.getString("bundledGameResArchiveUrl");
+        return url === "" ? undefined : url;
+    }
     get mapsBaseUrl(): string | undefined {
         const url = this.generalData.getString("mapsBaseUrl");
         return url === "" ? undefined : url;

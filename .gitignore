@@ -61,6 +61,8 @@ docs/
 .rts2_cache_umd/
 
 public/cdn/
+public/game-res/*.7z
+public/game-res/*.part
 .artifacts/
 scripts/
 
@@ -137,4 +139,4 @@ __test_strip.mjs
 __stripped_output.js
 _temp_builtIn/
 
-#शंकर 
+#शंकर

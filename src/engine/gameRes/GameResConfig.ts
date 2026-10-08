@@ -1,4 +1,31 @@
 import { GameResSource } from './GameResSource';
+export async function findBundledGameResArchive(path: string | undefined, baseUrl: string): Promise<URL | undefined> {
+    if (!path) {
+        return undefined;
+    }
+    try {
+        const base = new URL(baseUrl);
+        const url = new URL(path, base);
+        if (url.origin !== base.origin || !['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+            return undefined;
+        }
+        const response = await fetch(url, {
+            method: 'HEAD',
+            redirect: 'error',
+            signal: AbortSignal.timeout(5000),
+        });
+        const contentType = response.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase();
+        if (response.ok && Number(response.headers.get('Content-Length')) > 0
+            && (contentType === 'application/x-7z-compressed' || contentType === 'application/octet-stream'
+                || (!contentType && url.pathname.endsWith('.7z')))) {
+            return url;
+        }
+    }
+    catch {
+        // Missing bundles and unsupported static hosts retain the manual import flow.
+    }
+    return undefined;
+}
 export class GameResConfig {
     private defaultCdnBaseUrl: string;
     public source?: GameResSource;

@@ -6,7 +6,7 @@ import { Engine, EngineType } from '../Engine';
 import { ResourceLoader, LoaderResult } from '../ResourceLoader';
 import { DownloadError } from '../../network/HttpRequest';
 import { AppLogger } from '../../util/logger';
-import { GameResConfig } from './GameResConfig';
+import { GameResConfig, findBundledGameResArchive } from './GameResConfig';
 import { ChecksumError } from './importError/ChecksumError';
 import { FileNotFoundError as GameResFileNotFoundError } from './importError/FileNotFoundError';
 import { NoStorageError } from './importError/NoStorageError';
@@ -196,7 +196,10 @@ export class GameRes {
             }
         }
         const gameResBoxApi = new GameResBoxApi(this.viewport, this.strings, this.rootEl, this.fsAccessLib as any);
-        let archiveUrlFallback = this.appConfig.gameResArchiveUrl;
+        let bundledArchive = !resourcesLoadedSuccessfully && rfs
+            ? await findBundledGameResArchive(this.appConfig.bundledGameResArchiveUrl, window.location.href)
+            : undefined;
+        let archiveUrlFallback = bundledArchive?.href ?? this.appConfig.gameResArchiveUrl;
         while (!resourcesLoadedSuccessfully) {
             console.log('[GameRes] Resources not loaded successfully, prompting user for game files');
             this.splashScreen.setLoadingText("");
@@ -206,7 +209,8 @@ export class GameRes {
                 createdBlobUrl = undefined;
             }
             console.log('[GameRes] Calling gameResBoxApi.promptForGameRes');
-            const userSelection = await gameResBoxApi.promptForGameRes(archiveUrlFallback, !!this.appConfig.gameresBaseUrl && !this.modName);
+            const userSelection = bundledArchive ?? await gameResBoxApi.promptForGameRes(archiveUrlFallback, !!this.appConfig.gameresBaseUrl && !this.modName);
+            bundledArchive = undefined;
             console.log('[GameRes] User selection from prompt:', userSelection);
             currentConfig = new GameResConfig(this.appConfig.gameresBaseUrl ?? "");
             configRequiresSave = true;
@@ -499,7 +503,10 @@ export class GameRes {
                 throw e;
             }
             const calculatedCrc = Crc32.calculateCrc(new Uint8Array(buffer));
-            if (!expectedCrcs.includes(calculatedCrc.toString(16).toUpperCase())) {
+            const crcHex = calculatedCrc.toString(16).toUpperCase();
+            // Verified download.ra2web.com full-pack.7z revision, 2026-10-08.
+            const isBundledRa2Revision = mixName === 'ra2.mix' && file.size === 281888480 && crcHex === 'D48F0E34';
+            if (!expectedCrcs.includes(crcHex) && !isBundledRa2Revision) {
                 throw new ChecksumError(`Checksum mismatch for "${mixName}" (size: ${file.size}). ` +
                     `Checksum "${calculatedCrc.toString(16).toUpperCase()}" doesn't match known values: ${expectedCrcs.join(', ')}`, mixName);
             }
